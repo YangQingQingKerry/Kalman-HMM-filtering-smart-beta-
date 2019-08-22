@@ -9,7 +9,13 @@ _(Raw)_
 
 
 
-PCA -> Principal component data time series 
+_PCA -> Principal component data time series_
+
+**Procedure** 
+- _(Data)_  HMM-extended Kalman Filtered time series 
+- _(Filter)_ on-line filtering 
+- _(Parameter Estimate)_ EM algorithm
+- _(Backtesting) ... 
 
 
 
