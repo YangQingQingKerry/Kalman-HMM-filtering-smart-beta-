@@ -1,6 +1,8 @@
 # Kalman-HMM-filtering-smart-beta-
 
+---
 **Dataset** 
+---
 
 _(Raw)_
 
@@ -11,12 +13,15 @@ _(Raw)_
 
 _PCA -> Principal component data time series_
 
+
+---
 **Procedure** 
+---
 - _(Data)_  HMM-extended Kalman Filtered time series 
 - _(Filter)_ on-line filtering 
 - _(Parameter Estimate)_ EM algorithm
 - _(Smart Beta Investment)_ Prediction + Key factors Investment (long/short)  
-- _(Backtesting) ... 
+- _(Backtesting)_ ... 
 
 
 
