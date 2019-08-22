@@ -8,7 +8,6 @@ _(Raw)_
 2. ISHARES S&P/TSX 60 INDEX ETF Holding reports
 
 
-_(after)_
 
 PCA -> Principal component data time series 
 
