@@ -125,11 +125,6 @@ class FilEst(MLE):
         self.args[4+5*self.k:4+6*self.k]=lam*e2+(1-lam)*a2/O[0,1]
 
 
-
-
-
-
-
     def Estimate(self, freq, period, lam, Kalman):
         pd.DataFrame(self.args).to_excel('arg/args_{}.xlsx'.format(1))
         if Kalman:
@@ -181,7 +176,7 @@ if __name__=="__main__":
     ins2=FilEst(tns=63, val=0.00003)
     ins2.hmm(0)
     ins2.kalman(0)
-    ins2.Estimate(freq=3, period=189, lam=0.94, Kalman=True)
+    ins2.Estimate(freq=3, period=189, lam=0., Kalman=True)
 
 
 
