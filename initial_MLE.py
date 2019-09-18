@@ -1,112 +1,112 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import pandas as pd
+import numpy as np
 import os
 
 class MLE:
-    def __init__(self,
-                 tns): #training sample
+    def __init__(self,state, tns): #training sample
         self.dir_path="./data/pca/keyFactor"
-        self.df=pd.read_excel(self.dir_path+os.sep+'keyFactor_2009-01-19.xlsx')
+        self.df=pd.read_excel(self.dir_path+os.sep+'keyFactor_2009-09-11.xlsx')
+        #self.df=self.df[['Date','factor1']]
         self.df.set_index('Date', inplace=True)
-        self.r=self.df/self.df.shift(1)-1
-        self.r.iloc[0]=self.df.iloc[0].values-1
-        self.r=100*self.r #0.1%
-        self.k=len(self.r.columns)
+        self.f=(self.df-self.df.min())/(self.df.max()-self.df.min())
+        self.min=self.df.min().values
+        self.max=self.df.max().values
+        self.k=len(self.f.columns)
+        self.state=state
         self.tns=tns
-
-
-
 
     def phi_k(self, t, s,  args):
         from math import exp, sqrt, pi
-        import numpy as np
 
         phi=1
-        v1=self.r.iloc[t].values
-        v0=np.array([0.]*self.k) if t==0 else self.r.iloc[t-1].values
+        v1=self.f.iloc[t].values
+        v0= np.array([0.]*self.k) if t==0 else self.f.iloc[t-1].values
         for i in range(self.k):
-            phi*=(exp(-0.5*(v1[i]-args[i+s*self.k]*v0[i]-args[i+(s+2)*self.k])**2/args[i+(4+s)*self.k])/sqrt(2*pi*args[i+(4+s)*self.k]))
+            phi*=(exp(-0.5*(v1[i]-args[i+s*self.k]*v0[i]-args[i+(s+self.state)*self.k])**2\
+                      /args[i+(2*self.state+s)*self.k])/sqrt(2*pi*args[i+(2*self.state+s)*self.k]))
         return phi
-
-
-
-
 
     def obj(self, args):
         '''
-        args:
+        args(e.g., state=2):
         =====
              p_ij: args[:4]=(pi_11, pi_12, pi_21, pi_22)
-             mu_i: args[4: 4+2*self.k]
-             sigma_i^2: args[4+2*self.k:]
-
+             kappa_i: args[4: 4+2*self.k]
+             gamma_i: args[4+2*self.k:4+4*self.k]
+             sigma_i^2: args[4+4*self.k:]
         '''
         from math import log
-        import numpy as np
-
-
-
-        f_t1=args[2]/(1-args[0]+args[2])*self.phi_k(0, 0, args[4:])
-        f_t2=args[1]/(1-args[3]+args[1])*self.phi_k(0, 1, args[4:])
-        f_t=f_t1+f_t2
-        if f_t==0: return np.nan  #stopError
-        p1=f_t1/f_t
-        p2=f_t2/f_t
-        llh=-log(f_t)
+        p_o=[1/self.state]*self.state
+        f_t=[]
+        for i in range(self.state):
+            f_t.append(p_o[i]*self.phi_k(0,i, args[self.state**2:]))
+        ft=sum(f_t)
+        if ft==0: return np.nan  #stopError
+        p=np.array(f_t)/ft
+        llh=-log(ft)
         for t in range(1, self.tns):
-            f_t11=p1*args[0]*self.phi_k(t, 0, args[4:])
-            f_t12=p2*args[2]*self.phi_k(t, 0, args[4:])
-            f_t21=p1*args[1]*self.phi_k(t, 1, args[4:])
-            f_t22=p2*args[3]*self.phi_k(t, 1, args[4:])
-            f_t=f_t11+f_t12+f_t21+f_t22
-            if f_t==0: return np.nan #stopError
-            p1=(f_t11+f_t12)/f_t
-            p2=(f_t21+f_t22)/f_t
-            llh-=log(f_t)
-        pd.DataFrame(args).to_excel('./output/init_mle/arg.xlsx')
+            f_t=[]
+            for i in range(self.state):
+                for j in range(self.state):
+                    f_t.append(p[i]*args[i*self.state+j]*self.phi_k(t, j, args[self.state**2:]))
+            ft=sum(f_t)
+            if ft==0: return np.nan #stopError
+            f_t=np.array(f_t).reshape(self.state, self.state)
+            p=f_t.sum(axis=0)/ft
+            llh-=log(ft)
+        pd.DataFrame(args).to_excel('./output/init_mle/arg_{}state.xlsx'.format(self.state))
         return llh
 
 
-
-    def constraint1_eq(self, args):
-        return args[0]+args[1]-1.
-    def constraint2_eq(self,args):
-        return args[2]+args[3]-1.
     def optimz(self, args):
         from scipy.optimize import minimize
-
-        b1=(0,  1)
+        b1=(0.,  1)
         b2=(-100, 100) #from -100% to 100%
-        b3=(0.000001, 100)
-        bnds=tuple([b1]*4 +[b2]*(self.k*4)+[b3]*(self.k*2))
-        cons=({'type':'eq', 'fun':self.constraint1_eq},
-              {'type':'eq', 'fun':self.constraint2_eq})
+        b3=(0.0001, 100)
+        bnds=tuple([b1]*(self.state**2) +[b1]*(self.k*self.state)+[b2]*(self.k*self.state)+[b3]*(self.k*self.state))
+        cons=tuple([{'type':'eq', 'fun':lambda x: sum(x[i*self.state:(i+1)*self.state])-1} \
+                     for i in range(self.state)])
         sol=minimize(self.obj, args, method='SLSQP', bounds=bnds, constraints=cons)
         return sol
 
 
 
 
-
 if __name__=="__main__":
-    args=[0.5,0.5,0.5,0.5]
+    state=1
+    args=[1/state]*(state**2)
     tns=63
-    ins=MLE(tns)
+    ins=MLE(state, tns)
 
-    df=ins.r.iloc[:tns]
-    kappa=[0]*(2*ins.k)
-    gamma=[0.]*(ins.k*2)
-    sigma= list(df.std().values**2) +list(df.std().values**2+0.01)
-    args=args+kappa+gamma+sigma
+    '''
+    1-state model parameter estimates'
+    '''
+    df=ins.f.iloc[:tns]
+    df_1=df.shift(1).fillna(0)
+    Tt=(df*df_1).sum()
+    T=df.sum()
+    t=df_1.sum()
+    t2=(df_1**2).sum()
+    alpha=np.array(list(map(lambda x: max(0.0001,x), (tns*Tt-T*t)/(tns*t2-t**2))))
+    theta=(Tt-alpha*t2)/t
+    rm=df-alpha*df_1-theta
+    eta_2=(rm**2).sum()/tns
+
+
+
+    kappa=list(alpha)*state
+    gamma=list(theta.values)*state
+    sigma=list(eta_2.values)*state  #add some noise to 1-state model parameter estimates
+    args=args+ kappa+ gamma+sigma
+    pd.DataFrame(args).to_excel('./output/init_mle/arg_1state.xlsx')
 
 
     print(ins.obj(args))
     print(ins.optimz(args))
 
 
-    pd.DataFrame(df.mean().values).to_excel('./output/init_mle/1_mean.xlsx')
-    pd.DataFrame(df.std().values**2).to_excel('./output/init_mle/1_var.xlsx')
 
 
 
