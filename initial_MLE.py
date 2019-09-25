@@ -10,9 +10,13 @@ class MLE:
         self.df=pd.read_excel(self.dir_path+os.sep+'keyFactor_2009-09-11.xlsx')
         #self.df=self.df[['Date','factor1']]
         self.df.set_index('Date', inplace=True)
-        self.f=(self.df-self.df.min())/(self.df.max()-self.df.min())
-        self.min=self.df.min().values
-        self.max=self.df.max().values
+        self.f=100*(self.df.shift(-10)/self.df-1).dropna()
+
+#        self.df=(self.df/self.df.shift(21)).dropna()
+#        self.f=(self.df-self.df.min())/(self.df.max()-self.df.min())
+#        self.min=self.df.min().values
+#        self.max=self.df.max().values
+
         self.k=len(self.f.columns)
         self.state=state
         self.tns=tns
@@ -97,14 +101,14 @@ if __name__=="__main__":
 
 
     kappa=list(alpha)*state
-    gamma=list(theta.values)*state
+    gamma=theta.values
     sigma=list(eta_2.values)*state  #add some noise to 1-state model parameter estimates
-    args=args+ kappa+ gamma+sigma
+    args=args+ kappa +list(gamma) +sigma
     pd.DataFrame(args).to_excel('./output/init_mle/arg_1state.xlsx')
 
 
-    print(ins.obj(args))
-    print(ins.optimz(args))
+    #print(ins.obj(args))
+    #print(ins.optimz(args))
 
 
 
