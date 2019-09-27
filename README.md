@@ -17,10 +17,10 @@ _PCA -> Principal component data time series_
 ---
 **Procedure** 
 ---
-- _(Data)_  HMM-extended Kalman Filtered time series (DONE)
-- _(Filter)_ on-line filtering (DONE)
-- _(Parameter Estimate)_ EM algorithm (DONE)
-- _(Smart Beta Investment)_ Prediction + Key factors Investment (long/short)  (DONE)
+- _(Data)_  HMM-extended Kalman Filtered time series  
+- _(Filter)_ on-line filtering  
+- _(Parameter Estimate)_ EM algorithm  
+- _(Smart Beta Investment)_ Prediction + Key factors Investment (long/short)   
 - _(Backtesting)_ ... 
 
 
