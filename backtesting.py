@@ -136,7 +136,7 @@ if __name__=="__main__":
     lamb=1
     thresh=0.5
     bt=BackTCell(dir_path, state, order, tns, dval, diff, freq, window,lamb, thresh)
-    bt.Strgy(etf_url,False)
+    bt.Strgy(etf_url,True)
 
 
 
